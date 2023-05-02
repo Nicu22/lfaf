@@ -117,7 +117,7 @@ delta:
 
 ### Screenshots:
 
-![Graphical Representation](images/img-1.png "Graphical Representation")
+![Graphical Representation](/images/img-1.png "Graphical Representation")
 
 ## Conclusion
 In this laboratory work I implemented a type identifier from the grammar, a FA to grammar convertor, a determinism identifier for the FA, a NFA to DFA convertor and a way to represent finite automata graphically. The most difficulty I had is with the NFA to DFA convertor, the on paper way of doing it, it's easier than implementing a computer algorithm to do it. The python programming language is perfectly suitable for this task, as it is very easy to work with strings and lists.
