@@ -1,6 +1,9 @@
-# Importing necessary classes from modules
-from Grammar import RegularGrammar
-#from finiteautomata import FiniteAutomata
+from lexer import Lexer
+from parse import Parser
+
+
+'''
+#Variant 22:
 
 # Defining a dictionary representing a context-free grammar
 p = {
@@ -16,12 +19,11 @@ vn = ['S', 'A', 'B', 'C', 'E']
 vt = ['a', 'd']
 a = vt
 
-# Creating a RegularGrammar object with the specified parameters
-new_grammar = RegularGrammar(vn, vt, p, a)
+'''
 
-# Converting the grammar into Chomsky Normal Form and storing it in a new object
-cnf_form = new_grammar.ConvertCNF()
+NewLexer = Lexer('code.txt')
+tokens = NewLexer.regex_tokenize()
+print(tokens)
 
-# Iterating over the dictionary of productions in the CNF form and printing them out
-for key in cnf_form.p:
-    print(f'{key} : {cnf_form.p[key]}')
+new_parser = Parser(tokens)
+new_parser.parse()
