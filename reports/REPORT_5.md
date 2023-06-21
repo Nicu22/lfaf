@@ -13,45 +13,187 @@
     2.  Implement the necessary data structures for an AST that could be used for the text you have processed in the 3rd lab work.
     3.  Implement a simple parser program that could extract the syntactic information from the input text.
 
-## Implementation description
-Even while laboratory work 3 did not rely on regular expressions, it offered similar features. In this particular lab, a novel approach is presented to improve the Lexer class by integrating a method called as "regex_tokenize." In this novel approach, tokens are categorized using regular expressions, making use of the Python're' package. This innovative strategy gives the Lexer class more power and offers a new angle on the problem at issue. 
-
 ### Types of tokens
-Suite, Test, and Order are the three categories, and each has a specific function within the script.
-The Parser class has the following definition:
-```
-class  Parser:
-	def  __init__(self, tokens):
-		self.tokens  =  tokens
-		self.current_token_index  =  0
-		self.current_token  =  None
 
-	def  parse(self):
-		self.advance()
-		self.parse_program()
+`Suite`, `Test`, and `Order` are the three categories, and each has a specific function within the script.
 
-	def  advance(self):
-		if  self.current_token_index  <  len(self.tokens):
-		self.current_token  =  self.tokens[self.current_token_index]
-		self.current_token_index  +=  1
-```
 The parsing method begins with the parse method. To go on to the next token, it calls the advance method, and to parse the complete program, it calls the parse_program method.
 By using the advance method, the parser advances to the following token in the list of tokens. It makes the appropriate adjustments to the current_token_index and current_token variables.
 If the current token and the anticipated token type match, the match function returns true. If so, it uses the advance function to move on to the next token. If not, a Syntax Error is raised with the proper error message.
 
+## Implementation description
+Inside the `parser_1.py` we have 2 classes: `Node` and `Parser`. The code for `Node` class is the following:
+```
+def  __init__(self, type, children=None, leaf=None):
+	self.type  =  type
+	if  children:
+	self.children  =  children
+	else:
+	self.children  = []
+	self.leaf  =  leaf
+ 
+def  __str__(self, level=0):
+	ret  =  "\t"*level+repr(self.type)
+	if  self.leaf  is  not  None:
+	ret  +=  " ("  +  repr(self.leaf) +  ")"
+	ret  +=  "\n"
+	for  child  in  self.children:
+	ret  +=  child.__str__(level+1)
+	return  ret
+```
 
+A node in the Abstract Syntax Tree (AST) is represented by the Node class. Each node has a leaf value, a list of children (also nodes), and a type (such as "DESCRIPTION," "NAME," "TYPE," etc.). If a node has a leaf value, that is what it actually is worth. The leaf value of a node for a "NAME," for instance, would be the name itself, such as "Casimir."
+
+The Node class's __str__ method is used to transform a node to a string that reveals its structure. The string representations of all the child nodes are indented to illustrate their depth in the tree and include the type of the node, the leaf value (if present), and their string representations.
+
+To parse a list of tokens and create an AST, use the Parser class. It keeps track of its position in the list using a current_token index and a list of tokens.
+
+The Parser class's source code is as follows:
+```
+class Parser:
+    def __init__(self, tokens):
+        self.tokens = tokens
+        self.current_token = 0
+
+    def eat(self, token_type):
+        if self.tokens[self.current_token][0] == token_type:
+            self.current_token += 1
+        else:
+            raise Exception(
+                f"Unexpected token type: {self.tokens[self.current_token][0]}. Expected: {token_type}")
+
+    def parse(self):
+        nodes = []
+        while self.current_token < len(self.tokens):
+            if self.tokens[self.current_token][0] == 'DESCRIPTION':
+                nodes.append(self.description())
+            elif self.tokens[self.current_token][0] == 'SETTING':
+                nodes.append(self.setting())
+            elif self.tokens[self.current_token][0] == 'RESPONSE':
+                nodes.append(self.response())
+            else:
+                raise Exception(
+                    f"Unexpected token type: {self.tokens[self.current_token][0]}")
+        return nodes
+
+    def description(self):
+        self.eat('DESCRIPTION')
+        self.eat('LEFT_BRACE')
+        name = self.name()
+        type = self.type()
+        mbti = self.mbti()
+        role = self.role()
+        background = self.background()
+        self.eat('RIGHT_BRACE')
+        return Node('DESCRIPTION', [name, type, mbti, role, background])
+
+    def name(self):
+        self.eat('NAME')
+        self.eat('EQUALS')
+        name = self.tokens[self.current_token][1]
+        self.eat('STRING_LITERAL')
+        return Node('NAME', [], name)
+
+    def type(self):
+        self.eat('TYPE')
+        self.eat('EQUALS')
+        type = self.tokens[self.current_token][1]
+        self.eat('STRING_LITERAL')
+        return Node('TYPE', [], type)
+
+    def mbti(self):
+        self.eat('MBTI')
+        self.eat('EQUALS')
+        mbti = self.tokens[self.current_token][1]
+        self.eat('STRING_LITERAL')
+        return Node('MBTI', [], mbti)
+
+    def role(self):
+        self.eat('ROLE')
+        self.eat('EQUALS')
+        role = self.tokens[self.current_token][1]
+        self.eat('STRING_LITERAL')
+        return Node('ROLE', [], role)
+
+    def background(self):
+        self.eat('BACKGROUND')
+        self.eat('EQUALS')
+        background = self.tokens[self.current_token][1]
+        self.eat('STRING_LITERAL')
+        return Node('BACKGROUND', [], background)
+
+    def setting(self):
+        self.eat('SETTING')
+        self.eat('LEFT_BRACE')
+        type = self.type()
+        category = self.category()
+        background = self.background()
+        self.eat('RIGHT_BRACE')
+        return Node('SETTING', [type, category, background])
+
+    def category(self):
+        self.eat('CATEGORY')
+        self.eat('EQUALS')
+        category = self.tokens[self.current_token][1]
+        self.eat('STRING_LITERAL')
+        return Node('CATEGORY', [], category)
+
+    def response(self):
+        self.eat('RESPONSE')
+        self.eat('LEFT_BRACE')
+        length = self.length()
+        prompt = self.prompt()
+        self.eat('RIGHT_BRACE')
+        return Node('RESPONSE', [length, prompt])
+
+    def length(self):
+        self.eat('LENGTH')
+        self.eat('EQUALS')
+        length = self.tokens[self.current_token][1]
+        self.eat('NUMBER_LITERAL')
+        return Node('LENGTH', [], length)
+
+    def prompt(self):
+        self.eat('PROMPT')
+        self.eat('EQUALS')
+        prompt = self.tokens[self.current_token][1]
+        self.eat('STRING_LITERAL')
+        return Node('PROMPT', [], prompt)
+```
+A specific sort of token is consumed using the eat method. The current_token index is moved to the following token if the current token has the expected type. If not, an exception is raised.
+
+The primary method that initiates the parsing process is the parse method. Until all of the tokens have been eaten, it keeps consuming tokens and constructing nodes.
+
+The 'DESCRIPTION', 'SETTING', and 'RESPONSE' blocks are parsed using the relevant description, setting, and response methods. For each of these methods, a new node of the proper kind is created, the block's tokens are consumed, and further nodes are added for each component.
+
+The  `name`,  `type`,  `mbti`,  `role`,  `background`,  `category`,  `length`, and  `prompt`  methods are used to parse the individual parts of a block. Each of these methods creates a new node of the appropriate type, consumes the tokens that make up the part, and sets the leaf value of the node to the actual value from the tokens.
+
+The  `Parser`  class outputs such a result, in the form of an AST:
+
+```
+'DESCRIPTION'
+        'NAME' ('Casimir')
+        'TYPE' ('NPC')
+        'MBTI' ('intj')
+        'ROLE' ('protagonist')
+        'BACKGROUND' ('Casimir was a farmer who became a mercenary')
+
+'SETTING'
+        'TYPE' ('game')
+        'CATEGORY' ('medieval, fantasy, horror')
+        'BACKGROUND' ('A fantasy land where there are 3 knights')
+
+'RESPONSE'
+        'LENGTH' (300)
+        'PROMPT' ('What is your background history?')
+``` 
 
 ## Conclusion
-In conclusion, the project I built in Python for parsing and building an Abstract Syntax Tree (AST) has been a significant accomplishment in the field of programming. By implementing a Parser class with various methods, I have successfully constructed a reliable and efficient system for processing input tokens and generating an accurate AST.
 
-The project's foundation lies in the init function of the Parser class, where the input tokens are used to initialize the object. This allows for seamless integration of the token list into the parsing procedure. The parse method serves as the entry point, initiating the parsing process and guiding the progression through the token list.
+In this laboratory work, we made significant progress in developing a project aimed at compiling a sample code for a programming language. Building upon the previous step of lexical analysis, we focused on implementing a parser to conduct syntax analysis. The parser played a crucial role in processing the tokens generated by the lexer and organizing them in a structured manner that reflects their syntactic relationships.
 
-To ensure proper parsing, the advance method plays a crucial role by advancing to the next token in the token list. This controlled progression enables the parser to navigate through the input tokens systematically. The match method serves as a critical tool for determining whether the current token matches the expected type. If a match is found, the parser moves forward; otherwise, a SyntaxError is raised to handle unexpected tokens.
+The development of the parser drew upon the knowledge and experience gained from working on the Problem-Based Learning (PBL) project. While the approach used for the parser in this laboratory work differed from the one employed in the PBL project, the fundamental concepts and principles remained applicable. This cross-application of knowledge allowed for a deeper understanding of parsing techniques and their adaptation to different scenarios.
 
-The completeness of the program is ensured by the parse_program method, which orchestrates the parsing of different sections while verifying the presence of "BEGIN" and "END" keywords. The input section is parsed by the parse_input_section method, which handles variable declarations followed by a semicolon. Similarly, the parse_output_section method deals with variable declarations in the output section, maintaining the consistent structure of the program.
+By successfully implementing the parser, we achieved an essential milestone in the overall project of creating a compiler. The parser's role in analyzing the syntax of the code is instrumental in identifying and validating its correctness based on the language's grammar rules. This step brings us closer to the ultimate goal of transforming source code into executable programs.
 
-The parse_ram_section method addresses the parsing of the program's RAM section, encompassing contact, logic gate, variable, and numeric tokens. This method ensures the accurate representation of the program's logic and structure in the AST.
-
-Furthermore, the parse_assignment method proves invaluable for parsing assignment statements, handling variables, numeric values, assignment operators, and logic gates. It guarantees the correct interpretation of these statements within the AST, enhancing the overall functionality of the system.
-
-In summary, the Parser class developed in this project provides a robust and efficient solution for processing input tokens and constructing an Abstract Syntax Tree. The adherence to established grammatical rules and the handling of unexpected tokens through SyntaxError detection demonstrate the project's commitment to accuracy and reliability. This endeavor has equipped me with valuable skills in parsing, AST construction, and error handling, which can be applied in diverse programming contexts.
+As the project progresses, we will continue to refine and expand upon the parser's capabilities, integrating it further into the broader compilation process. The knowledge and experience gained from working on this parser will serve as a foundation for tackling future challenges in compiler development and deepening our understanding of language parsing techniques.
