@@ -1,29 +1,31 @@
 from lexer import Lexer
-from parse import Parser
+from parser_1 import Parser
 
 
-'''
-#Variant 22:
+if __name__ == "__main__":
+    code = '''
+    Description {
+        name="Casimir"
+        type="NPC"
+        mbti="intj"
+        role="protagonist"
+        background="Casimir was a farmer before turning mercenary."
+    }
+    Setting {
+        type="game" 
+        category="strategy, fantasy, medieval"
+        background="3 knights are in a fantasy land"
+    }
+    Response {
+        length=300
+        prompt="What is your background history?"
+    }'''
 
-# Defining a dictionary representing a context-free grammar
-p = {
-    'S' : ['dB', 'A'],
-    'A' : ['d', 'dS', 'aAdAB'],
-    'B' : ['aC', 'aS', 'AC'],
-    'C' : [''],
-    'E' : ['AS']
-}
+    lexer = Lexer()
+    tokens = lexer.tokenize(code)
+    print(tokens)
 
-# Defining the non-terminals and terminals of the grammar
-vn = ['S', 'A', 'B', 'C', 'E']
-vt = ['a', 'd']
-a = vt
-
-'''
-
-NewLexer = Lexer('code.txt')
-tokens = NewLexer.regex_tokenize()
-print(tokens)
-
-new_parser = Parser(tokens)
-new_parser.parse()
+    parser = Parser(tokens)
+    trees = parser.parse()
+    for tree in trees:
+        print(tree)
